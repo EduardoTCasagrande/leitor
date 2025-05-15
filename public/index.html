@@ -7,13 +7,18 @@
   <style>
     #reader { width: 300px; height: 300px; margin-bottom: 10px; }
     #result, #counts { font-family: monospace; }
+    .baixo{
+      margim-top: 230px;
+    }
   </style>
 </head>
 <body>
   <h1>Escaneie o QR Code9</h1>
-  <div id="reader"></div>
-  <div id="result">Aguardando scan...</div>
-  <div id="counts"><h3>Contagem de SKUs:</h3></div>
+  <div class="baixo">
+    <div id="reader"></div>
+    <div id="result">Aguardando scan...</div>
+    <div id="counts"><h3>Contagem de SKUs:</h3></div>   
+  </div>
 
   <script>
     const scanCooldown = 5000; // 5 segundos
