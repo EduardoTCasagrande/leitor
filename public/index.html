@@ -1,59 +1,87 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
-  <title>Scanner de QR Code</title>
-  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-  <script>
-  function atualizarContagens() {
-    fetch('/api/counts')
-      .then(res => res.json())
-      .then(data => {
-        const countsDiv = document.getElementById('counts');
-        countsDiv.innerHTML = '<h3>Contagem de SKUs:</h3>';
-        for (const [sku, count] of Object.entries(data)) {
-          countsDiv.innerHTML += `<p>${sku}: ${count}</p>`;
-        }
-      });
-  }
+  <meta charset="UTF-8" />
+  <title>Scanner QR Code</title>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <style>
+    #reader { width: 300px; height: 300px; margin-bottom: 10px; }
+    #result, #counts { font-family: monospace; }
+  </style>
 </head>
 <body>
-  <h1>Escaneie o QR Code 9.0</h1>
-  <div id="reader" style="width: 300px;"></div>
-  <div id="result"></div>
+  <h1>Escaneie o QR Code</h1>
+  <div id="reader"></div>
+  <div id="result">Aguardando scan...</div>
+  <div id="counts"><h3>Contagem de SKUs:</h3></div>
 
-  
   <script>
- const lastScanTime = {};
-const scanCooldown = 5000; // 5 segundos em milissegundos
+    const scanCooldown = 5000; // 5 segundos
+    const lastScanTime = {};
 
-function onScanSuccess(decodedText) {
-  const now = Date.now();
+    function atualizarContagens() {
+      fetch('/api/counts')
+        .then(res => res.json())
+        .then(data => {
+          const countsDiv = document.getElementById('counts');
+          countsDiv.innerHTML = '<h3>Contagem de SKUs:</h3>';
+          for (const [sku, count] of Object.entries(data)) {
+            countsDiv.innerHTML += `<p>${sku}: ${count}</p>`;
+          }
+        });
+    }
 
-  if (!lastScanTime[decodedText] || (now - lastScanTime[decodedText] > scanCooldown)) {
-    lastScanTime[decodedText] = now;
+    function onScanSuccess(decodedText) {
+      const now = Date.now();
 
-    document.getElementById('result').innerText = `Escaneado: ${decodedText}`;
+      if (!lastScanTime[decodedText] || (now - lastScanTime[decodedText] > scanCooldown)) {
+        lastScanTime[decodedText] = now;
 
-    fetch('/api/save', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sku: decodedText })
-    })
-    .then(res => res.json())
-    .then(data => {
-      if(data.success){
-        atualizarContagens();
+        document.getElementById('result').innerText = `Escaneado: ${decodedText}`;
+
+        fetch('/api/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sku: decodedText })
+        })
+        .then(res => res.json())
+        .then(data => {
+          if(data.success){
+            atualizarContagens();
+          } else {
+            console.error('Erro no backend:', data.error);
+          }
+        })
+        .catch(console.error);
+
       } else {
-        console.error('Erro no backend:', data.error);
+        console.log(`SKU ${decodedText} ignorado por cooldown.`);
       }
-    })
-    .catch(console.error);
+    }
 
-  } else {
-    console.log(`SKU ${decodedText} ignorado por cooldown.`);
-  }
-}
+    const html5QrCode = new Html5Qrcode("reader");
+
+    Html5Qrcode.getCameras().then(devices => {
+      if (devices.length === 0) {
+        document.getElementById('result').innerText = "Nenhuma câmera encontrada.";
+        return;
+      }
+
+      html5QrCode.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: 250 },
+        onScanSuccess,
+        (errorMessage) => {
+          console.warn(`Erro no scanner: ${errorMessage}`);
+        }
+      ).catch(err => {
+        document.getElementById('result').innerText = `Erro ao iniciar câmera: ${err}`;
+      });
+
+      atualizarContagens(); // mostrar contagens ao abrir
+    }).catch(err => {
+      document.getElementById('result').innerText = `Erro ao acessar câmera: ${err}`;
+    });
   </script>
-  
 </body>
 </html>
