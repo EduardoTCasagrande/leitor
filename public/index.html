@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Scanner de QR Code</title>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+</head>
+<body>
+  <h1>Escaneie o QR Code</h1>
+  <div id="reader" style="width: 300px;"></div>
+  <div id="result"></div>
+
+  <script>
+    function onScanSuccess(qrCodeMessage) {
+      document.getElementById('result').innerHTML =
+        `<p>QR Code: ${qrCodeMessage}</p>`;
+      console.log("QR Code lido:", qrCodeMessage);
+
+      // Aqui você pode enviar o dado para um backend em Node.js, se quiser
+      /*
+      fetch('/api/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sku: qrCodeMessage })
+      });
+      */
+    }
+
+    const html5QrCode = new Html5Qrcode("reader");
+
+    html5QrCode.start(
+    { video: true },
+  { facingMode: "environment" }, // câmera traseira
+  { fps: 10, qrbox: 250 },
+  onScanSuccess
+).catch(err => {
+  document.getElementById('result').innerHTML = `<p style="color:red">Erro: ${err}</p>`;
+  console.error("Erro ao iniciar o scanner:", err);
+});
+
+  </script>
+</body>
+</html>
