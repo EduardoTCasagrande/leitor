@@ -1,22 +1,19 @@
 const express = require('express');
-const bodyParser = require('body-parser');
 const app = express();
-const port = 3000;
+
+app.use(express.json());
 
 const skuCounts = {};
 
-app.use(bodyParser.json());
-app.use(express.static('public')); // onde fica o index.html
-
 app.post('/api/save', (req, res) => {
   const { sku } = req.body;
-  if (!sku) return res.status(400).send('SKU inválido');
+  if (!sku) return res.status(400).json({ error: 'SKU não enviado' });
 
   skuCounts[sku] = (skuCounts[sku] || 0) + 1;
-  console.log(`SKU recebido: ${sku} - Total: ${skuCounts[sku]}`);
-  res.send({ sucesso: true });
+  console.log(`SKU ${sku} escaneado. Total: ${skuCounts[sku]}`);
+
+  res.json({ success: true, count: skuCounts[sku] });
 });
 
-app.listen(port, () => {
-  console.log(`Servidor rodando em http://localhost:${port}`);
-});
+const port = process.env.PORT || 3000;
+app.listen(port, () => console.log(`Server rodando na porta ${port}`));
