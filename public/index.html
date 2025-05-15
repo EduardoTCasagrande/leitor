@@ -5,45 +5,43 @@
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 </head>
 <body>
-  <h1>Escaneie o QR Code</h1>
+  <h1>Escaneie o QR Code 2.0</h1>
   <div id="reader" style="width: 300px;"></div>
   <div id="result"></div>
 
-<script>
-  function onScanSuccess(decodedText, decodedResult) {
-    document.getElementById('result').innerHTML = `<p>Escaneado: ${decodedText}</p>`;
+  <script>
+  function onScanSuccess(decodedText) {
+    document.getElementById('result').innerText = `Escaneado: ${decodedText}`;
 
     fetch('/api/save', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ sku: decodedText })
-    });
+    })
+    .then(res => res.json())
+    .then(data => {
+      if(data.success){
+        console.log(`SKU ${decodedText} contado! Total agora: ${data.count}`);
+      } else {
+        console.error('Erro no backend:', data.error);
+      }
+    })
+    .catch(console.error);
   }
 
-  const html5QrCode = new Html5Qrcode("reader");
-
-  Html5Qrcode.getCameras().then(devices => {
-    if (devices && devices.length) {
-      const cameraId = devices[0].id;
-      html5QrCode.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: 250 },
-        onScanSuccess
-      ).catch(err => {
-        document.getElementById('result').innerHTML = `<p style="color:red;">Erro: ${err}</p>`;
-        console.error("Erro ao iniciar scanner:", err);
-      });
-    } else {
-      document.getElementById('result').innerHTML = `<p style="color:red;">Nenhuma câmera encontrada.</p>`;
-    }
-  }).catch(err => {
-    document.getElementById('result').innerHTML = `<p style="color:red;">Erro ao acessar câmeras: ${err}</p>`;
-    console.error("Erro ao listar câmeras:", err);
-  });
-</script>
   
+    const html5QrCode = new Html5Qrcode("reader");
+  
+    html5QrCode.start(
+  { facingMode: "environment" },
+  { fps: 10, qrbox: 250 },
+  onScanSuccess,
+  (errorMessage) => {
+    // opcional: tratar erros de leitura do QR Code
+  }
+);
 
+  </script>
+  
 </body>
 </html>
