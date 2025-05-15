@@ -9,34 +9,41 @@
   <div id="reader" style="width: 300px;"></div>
   <div id="result"></div>
 
-  <script>
-    function onScanSuccess(qrCodeMessage) {
-      document.getElementById('result').innerHTML =
-        `<p>QR Code: ${qrCodeMessage}</p>`;
-      console.log("QR Code lido:", qrCodeMessage);
+<script>
+  function onScanSuccess(decodedText, decodedResult) {
+    document.getElementById('result').innerHTML = `<p>Escaneado: ${decodedText}</p>`;
 
-      // Aqui você pode enviar o dado para um backend em Node.js, se quiser
-      /*
-      fetch('/api/save', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sku: qrCodeMessage })
+    fetch('/api/save', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ sku: decodedText })
+    });
+  }
+
+  const html5QrCode = new Html5Qrcode("reader");
+
+  Html5Qrcode.getCameras().then(devices => {
+    if (devices && devices.length) {
+      const cameraId = devices[0].id;
+      html5QrCode.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: 250 },
+        onScanSuccess
+      ).catch(err => {
+        document.getElementById('result').innerHTML = `<p style="color:red;">Erro: ${err}</p>`;
+        console.error("Erro ao iniciar scanner:", err);
       });
-      */
+    } else {
+      document.getElementById('result').innerHTML = `<p style="color:red;">Nenhuma câmera encontrada.</p>`;
     }
+  }).catch(err => {
+    document.getElementById('result').innerHTML = `<p style="color:red;">Erro ao acessar câmeras: ${err}</p>`;
+    console.error("Erro ao listar câmeras:", err);
+  });
+</script>
+  
 
-    const html5QrCode = new Html5Qrcode("reader");
-
-    html5QrCode.start(
-    { video: true },
-  { facingMode: "environment" }, // câmera traseira
-  { fps: 10, qrbox: 250 },
-  onScanSuccess
-).catch(err => {
-  document.getElementById('result').innerHTML = `<p style="color:red">Erro: ${err}</p>`;
-  console.error("Erro ao iniciar o scanner:", err);
-});
-
-  </script>
 </body>
 </html>
