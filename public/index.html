@@ -1,93 +1,39 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <title>Scanner QR Code</title>
+  <title>Leitor de SKU</title>
   <script src="https://unpkg.com/html5-qrcode"></script>
-  <style>
-    #reader { width: 300px; height: 300px; margin-bottom: 10px; }
-    #result, #counts { font-family: monospace; }
-    .baixo{
-      margin-top: 230px;
-    }
-  </style>
 </head>
 <body>
-  <h1>Escaneie o QR Code~ç</h1>
-
-    <div id="reader"></div>
-  <div class="baixo">
-    <div id="result">Aguardando scan...</div>
-    <div id="counts"><h3>Contagem de SKUs:</h3></div>   
-  </div>
+  <h1>Leitor de SKU</h1>
+  <div id="reader" style="width:300px;"></div>
+  <ul id="sku-list"></ul>
 
   <script>
-    const scanCooldown = 5000; // 5 segundos
-    const lastScanTime = {};
-
-    function atualizarContagens() {
-      fetch('/api/counts')
-        .then(res => res.json())
-        .then(data => {
-          const countsDiv = document.getElementById('counts');
-          countsDiv.innerHTML = '<h3>Contagem de SKUs:</h3>';
-          for (const [sku, count] of Object.entries(data)) {
-            countsDiv.innerHTML += `<p>${sku}: ${count}</p>`;
-          }
-        });
-    }
+    const skuCount = {};
 
     function onScanSuccess(decodedText) {
-      const now = Date.now();
+      if (!skuCount[decodedText]) skuCount[decodedText] = 0;
+      skuCount[decodedText]++;
+      renderList();
+    }
 
-      if (!lastScanTime[decodedText] || (now - lastScanTime[decodedText] > scanCooldown)) {
-        lastScanTime[decodedText] = now;
-
-        document.getElementById('result').innerText = `Escaneado: ${decodedText}`;
-
-        fetch('/api/save', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ sku: decodedText })
-        })
-        .then(res => res.json())
-        .then(data => {
-          if(data.success){
-            atualizarContagens();
-          } else {
-            console.error('Erro no backend:', data.error);
-          }
-        })
-        .catch(console.error);
-
-      } else {
-        console.log(`SKU ${decodedText} ignorado por cooldown.`);
+    function renderList() {
+      const list = document.getElementById("sku-list");
+      list.innerHTML = '';
+      for (let sku in skuCount) {
+        const li = document.createElement("li");
+        li.textContent = `${sku} — ${skuCount[sku]}x`;
+        list.appendChild(li);
       }
     }
 
     const html5QrCode = new Html5Qrcode("reader");
-
-    Html5Qrcode.getCameras().then(devices => {
-      if (devices.length === 0) {
-        document.getElementById('result').innerText = "Nenhuma câmera encontrada.";
-        return;
-      }
-
-      html5QrCode.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: 250 },
-        onScanSuccess,
-        (errorMessage) => {
-          console.warn(`Erro no scanner: ${errorMessage}`);
-        }
-      ).catch(err => {
-        document.getElementById('result').innerText = `Erro ao iniciar câmera: ${err}`;
-      });
-
-      atualizarContagens(); // mostrar contagens ao abrir
-    }).catch(err => {
-      document.getElementById('result').innerText = `Erro ao acessar câmera: ${err}`;
-    });
+    html5QrCode.start(
+      { facingMode: "environment" },
+      { fps: 10, qrbox: 250 },
+      onScanSuccess
+    );
   </script>
 </body>
 </html>
