@@ -10,7 +10,15 @@
   <div id="result"></div>
 
   <script>
-  function onScanSuccess(decodedText) {
+ const lastScanTime = {};
+const scanCooldown = 5000; // 5 segundos em milissegundos
+
+function onScanSuccess(decodedText) {
+  const now = Date.now();
+
+  if (!lastScanTime[decodedText] || (now - lastScanTime[decodedText] > scanCooldown)) {
+    lastScanTime[decodedText] = now;
+
     document.getElementById('result').innerText = `Escaneado: ${decodedText}`;
 
     fetch('/api/save', {
@@ -21,26 +29,17 @@
     .then(res => res.json())
     .then(data => {
       if(data.success){
-        console.log(`SKU ${decodedText} contado! Total agora: ${data.count}`);
+        atualizarContagens();
       } else {
         console.error('Erro no backend:', data.error);
       }
     })
     .catch(console.error);
-  }
 
-  
-    const html5QrCode = new Html5Qrcode("reader");
-  
-    html5QrCode.start(
-  { facingMode: "environment" },
-  { fps: 10, qrbox: 250 },
-  onScanSuccess,
-  (errorMessage) => {
-    // opcional: tratar erros de leitura do QR Code
+  } else {
+    console.log(`SKU ${decodedText} ignorado por cooldown.`);
   }
-);
-
+}
   </script>
   
 </body>
