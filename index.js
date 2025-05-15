@@ -10,9 +10,12 @@ app.post('/api/save', (req, res) => {
   if (!sku) return res.status(400).json({ error: 'SKU não enviado' });
 
   skuCounts[sku] = (skuCounts[sku] || 0) + 1;
-  console.log(`SKU ${sku} escaneado. Total: ${skuCounts[sku]}`);
 
-  res.json({ success: true, count: skuCounts[sku] });
+  res.json({ success: true, count: skuCounts[sku], skuCounts });
+});
+
+app.get('/api/counts', (req, res) => {
+  res.json(skuCounts);
 });
 
 const port = process.env.PORT || 3000;
